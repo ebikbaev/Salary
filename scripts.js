@@ -1,239 +1,220 @@
+let calendar;
+
+function login() {
+  const username = document.getElementById("loginUsername").value;
+  const password = document.getElementById("loginPassword").value;
+
+  fetch("api/login.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username: username, password: password }),
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      document.getElementById("loginResult").innerText = data.message;
+      if (data.message === "Login successful.") {
+        document.getElementById("auth").style.display = "none";
+        document.getElementById("calculator").style.display = "block";
+        loadCalendar();
+      }
+    });
+}
+
+function register() {
+  const username = document.getElementById("registerUsername").value;
+  const password = document.getElementById("registerPassword").value;
+
+  fetch("api/register.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username: username, password: password }),
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      document.getElementById("registerResult").innerText = data.message;
+    });
+}
+
 function openTab(evt, tabName) {
   var i, tabcontent, tablinks;
+
   tabcontent = document.getElementsByClassName("tabcontent");
   for (i = 0; i < tabcontent.length; i++) {
     tabcontent[i].style.display = "none";
   }
+
   tablinks = document.getElementsByClassName("tablinks");
   for (i = 0; i < tablinks.length; i++) {
     tablinks[i].className = tablinks[i].className.replace(" active", "");
   }
+
   document.getElementById(tabName).style.display = "block";
   evt.currentTarget.className += " active";
+
+  if (tabName === "Calendar") {
+    calendar.render();
+  }
 }
 
 function calculateHourlyIncome() {
-  var hourlyRate = parseFloat(document.getElementById("hourlyRate").value);
-  var workedHours = parseFloat(document.getElementById("workedHours").value);
-  var normalHours = parseFloat(document.getElementById("normalHours").value);
-  var date = document.getElementById("hourlyDate").value;
-  var result = 0;
+  const hourlyRate = parseFloat(document.getElementById("hourlyRate").value);
+  const workedHours = parseFloat(document.getElementById("workedHours").value);
+  const normalHours = parseFloat(document.getElementById("normalHours").value);
+  const hourlyDate = document.getElementById("hourlyDate").value;
 
-  if (workedHours > normalHours) {
-    var normalPayment = normalHours * hourlyRate;
-    var overtimePayment = (workedHours - normalHours) * hourlyRate * 1.5;
-    result = normalPayment + overtimePayment;
+  let income;
+  if (workedHours <= normalHours) {
+    income = hourlyRate * workedHours;
   } else {
-    result = workedHours * hourlyRate;
+    income =
+      hourlyRate * normalHours + (workedHours - normalHours) * hourlyRate * 1.5;
   }
 
   document.getElementById(
     "hourlyResult"
-  ).innerText = `Доход за ${date}: $${result.toFixed(2)}`;
-
-  fetch("/save_hourly_income", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      hourlyRate: hourlyRate,
-      workedHours: workedHours,
-      normalHours: normalHours,
-      date: date,
-      result: result,
-    }),
-  })
-    .then((response) => response.json())
-    .then((data) => {
-      console.log("Success:", data);
-    })
-    .catch((error) => {
-      console.error("Error:", error);
-    });
+  ).innerText = `Доход за ${hourlyDate}: $${income.toFixed(2)}`;
+  addIncomeToCalendar(hourlyDate, income);
 }
 
 function calculateTaskIncome() {
-  var hourlyRate = parseFloat(document.getElementById("taskHourlyRate").value);
-  var taskCount = parseInt(document.getElementById("taskCount").value);
-  var taskRateAbove8 = parseFloat(
+  const taskHourlyRate = parseFloat(
+    document.getElementById("taskHourlyRate").value
+  );
+  const taskCount = parseInt(document.getElementById("taskCount").value, 10);
+  const taskRateAbove8 = parseFloat(
     document.getElementById("taskRateAbove8").value
   );
-  var coefficient = parseFloat(document.getElementById("coefficient").value);
-  var date = document.getElementById("taskDate").value;
-  var result = 0;
+  const coefficient = parseFloat(document.getElementById("coefficient").value);
+  const taskDate = document.getElementById("taskDate").value;
 
-  if (taskCount > 8) {
-    var additionalTasks = taskCount - 8;
-    var additionalPayment = additionalTasks * taskRateAbove8;
-    result = 8 * hourlyRate * coefficient + additionalPayment;
+  let income;
+  if (taskCount <= 8) {
+    income = taskHourlyRate * taskCount;
   } else {
-    result = taskCount * hourlyRate * coefficient;
+    income =
+      taskHourlyRate * 8 + (taskCount - 8) * taskRateAbove8 * coefficient;
   }
 
   document.getElementById(
     "taskResult"
-  ).innerText = `Доход за ${date}: $${result.toFixed(2)}`;
-
-  fetch("/save_task_income", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      hourlyRate: hourlyRate,
-      taskCount: taskCount,
-      taskRateAbove8: taskRateAbove8,
-      coefficient: coefficient,
-      date: date,
-      result: result,
-    }),
-  })
-    .then((response) => response.json())
-    .then((data) => {
-      console.log("Success:", data);
-    })
-    .catch((error) => {
-      console.error("Error:", error);
-    });
+  ).innerText = `Доход за ${taskDate}: $${income.toFixed(2)}`;
+  addIncomeToCalendar(taskDate, income);
 }
 
 function calculateBonus() {
-  var monthlyIncome = parseFloat(
+  const monthlyIncome = parseFloat(
     document.getElementById("monthlyIncome").value
   );
-  var qaScore = parseInt(document.getElementById("qaScore").value);
-  var holidayDays = parseInt(document.getElementById("holidayDays").value);
-  var hourlyRate = parseFloat(document.getElementById("hourlyRateBonus").value);
-  var bonusCoefficient = 0;
+  const qaScore = parseFloat(document.getElementById("qaScore").value);
+  const holidayDays = parseInt(
+    document.getElementById("holidayDays").value,
+    10
+  );
+  const hourlyRateBonus = parseFloat(
+    document.getElementById("hourlyRateBonus").value
+  );
 
-  if (qaScore >= 30) {
-    bonusCoefficient = 1.5;
-  } else if (qaScore == 29) {
-    bonusCoefficient = 1.3;
-  } else if (qaScore == 28) {
-    bonusCoefficient = 1.2;
-  } else if (qaScore == 27) {
-    bonusCoefficient = 1.0;
-  }
+  const bonusPercentage = qaScore / 30;
+  const bonus = monthlyIncome * bonusPercentage;
+  const holidayPay = holidayDays * 8 * hourlyRateBonus;
 
-  var holidayBonus = holidayDays * hourlyRate * 8;
-  var bonus = 0.3 * monthlyIncome * bonusCoefficient - 0.3 * monthlyIncome;
-  var totalIncome = monthlyIncome + bonus + holidayBonus;
+  const totalIncome = monthlyIncome + bonus + holidayPay;
 
   document.getElementById("bonusResult").innerText = `Бонус: $${bonus.toFixed(
     2
-  )} (включая ${holidayBonus.toFixed(2)} за ${holidayDays} праздничных дней)`;
+  )}`;
   document.getElementById(
     "totalIncomeResult"
-  ).innerText = `Суммарный доход: $${totalIncome.toFixed(2)}`;
-
-  fetch("/save_bonus", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      monthlyIncome: monthlyIncome,
-      qaScore: qaScore,
-      holidayDays: holidayDays,
-      hourlyRate: hourlyRate,
-      bonus: bonus,
-      holidayBonus: holidayBonus,
-      totalIncome: totalIncome,
-    }),
-  })
-    .then((response) => response.json())
-    .then((data) => {
-      console.log("Success:", data);
-    })
-    .catch((error) => {
-      console.error("Error:", error);
-    });
-}
-
-function calculateNetIncome() {
-  var totalIncome = parseFloat(document.getElementById("totalIncome").value);
-  var esv = parseFloat(document.getElementById("esv").value);
-  var exchangeRate = parseFloat(document.getElementById("exchangeRate").value);
-  var tax = 0.05 * totalIncome;
-  var netIncome = totalIncome - tax - esv;
-  var netIncomeInUAH = netIncome * exchangeRate;
-
-  document.getElementById(
-    "netIncomeResult"
-  ).innerText = `Чистий прибуток: $${netIncome.toFixed(2)}`;
-  document.getElementById(
-    "netIncomeInUAHResult"
-  ).innerText = `Чистий прибуток в гривнах: ₴${netIncomeInUAH.toFixed(2)}`;
+  ).innerText = `Общий доход: $${totalIncome.toFixed(2)}`;
 }
 
 function calculateRequiredHours() {
-  var targetIncome = parseFloat(document.getElementById("targetIncome").value);
-  var hourlyRate = parseFloat(
+  const targetIncome = parseFloat(
+    document.getElementById("targetIncome").value
+  );
+  const hourlyRateRequired = parseFloat(
     document.getElementById("hourlyRateRequired").value
   );
-  var normalHours = parseFloat(
+  const normalHoursRequired = parseFloat(
     document.getElementById("normalHoursRequired").value
   );
-  var totalShifts = parseInt(
-    document.getElementById("totalShiftsRequired").value
+  const totalShiftsRequired = parseInt(
+    document.getElementById("totalShiftsRequired").value,
+    10
   );
 
-  var totalRequiredHours = targetIncome / hourlyRate;
-  var dailyRequiredHours = totalRequiredHours / totalShifts;
-
-  var requiredDailyHours;
-  if (dailyRequiredHours > normalHours) {
-    var overtimeHours = dailyRequiredHours - normalHours;
-    requiredDailyHours = normalHours + overtimeHours / 1.5;
-  } else {
-    requiredDailyHours = dailyRequiredHours;
-  }
+  const requiredHours =
+    targetIncome /
+    (hourlyRateRequired * normalHoursRequired * totalShiftsRequired);
 
   document.getElementById(
     "requiredHoursResult"
-  ).innerText = `Вам потрібно працювати ${requiredDailyHours.toFixed(
-    2
-  )} годин на день для досягнення доходу ${targetIncome.toFixed(2)}$.`;
+  ).innerText = `Необходимые часы: ${requiredHours.toFixed(2)}`;
 }
 
 function calculateRequiredTasks() {
-  var targetIncome = parseFloat(document.getElementById("targetIncome").value);
-  var hourlyRate = parseFloat(
+  const targetIncome = parseFloat(
+    document.getElementById("targetIncome").value
+  );
+  const hourlyRateTasksRequired = parseFloat(
     document.getElementById("hourlyRateTasksRequired").value
   );
-  var taskRateAbove8 = parseFloat(
+  const taskRateAbove8Required = parseFloat(
     document.getElementById("taskRateAbove8Required").value
   );
-  var coefficient = parseFloat(
+  const coefficientRequired = parseFloat(
     document.getElementById("coefficientRequired").value
   );
-  var totalShifts = parseInt(
-    document.getElementById("totalShiftsTasksRequired").value
+  const totalShiftsTasksRequired = parseInt(
+    document.getElementById("totalShiftsTasksRequired").value,
+    10
   );
 
-  var baseIncome = 8 * hourlyRate * coefficient;
-  var requiredTasks;
-
-  if (baseIncome >= targetIncome) {
-    requiredTasks = targetIncome / (hourlyRate * coefficient);
-  } else {
-    var additionalIncome = targetIncome - baseIncome;
-    var additionalTasks = additionalIncome / taskRateAbove8;
-    requiredTasks = 8 + additionalTasks;
-  }
-
-  var dailyRequiredTasks = requiredTasks / totalShifts;
+  const requiredTasks =
+    targetIncome /
+    ((hourlyRateTasksRequired * 8 +
+      taskRateAbove8Required * coefficientRequired) *
+      totalShiftsTasksRequired);
 
   document.getElementById(
     "requiredTasksResult"
-  ).innerText = `Вам потрібно виконувати ${dailyRequiredTasks.toFixed(
-    2
-  )} тасків на день для досягнення доходу ${targetIncome.toFixed(2)}$.`;
+  ).innerText = `Необходимые задачи: ${requiredTasks.toFixed(2)}`;
 }
 
-// Default to open the first tab
-document.addEventListener("DOMContentLoaded", function () {
-  document.querySelector(".tablinks").click();
-});
+function calculateNetIncome() {
+  const totalIncome = parseFloat(document.getElementById("totalIncome").value);
+  const esv = parseFloat(document.getElementById("esv").value);
+  const exchangeRate = parseFloat(
+    document.getElementById("exchangeRate").value
+  );
+
+  const netIncome = totalIncome - esv;
+  const netIncomeInUAH = netIncome * exchangeRate;
+
+  document.getElementById(
+    "netIncomeResult"
+  ).innerText = `Чистый доход: $${netIncome.toFixed(2)}`;
+  document.getElementById(
+    "netIncomeInUAHResult"
+  ).innerText = `Чистый доход в гривнах: ₴${netIncomeInUAH.toFixed(2)}`;
+}
+
+function addIncomeToCalendar(date, income) {
+  calendar.addEvent({
+    title: `$${income.toFixed(2)}`,
+    start: date,
+  });
+}
+
+function loadCalendar() {
+  calendar = new FullCalendar.Calendar(document.getElementById("calendar"), {
+    plugins: ["dayGrid"],
+    header: {
+      left: "prev,next today",
+      center: "title",
+      right: "dayGridMonth,dayGridWeek,dayGridDay",
+    },
+    events: [],
+  });
+  calendar.render();
+}
