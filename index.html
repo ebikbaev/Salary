@@ -5,74 +5,42 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Income Calculator</title>
     <link rel="stylesheet" href="styles.css" />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css"
-    />
   </head>
   <body>
     <div class="container">
       <h1>Income Calculator</h1>
 
-      <div id="auth">
-        <h2>Login</h2>
-        <label for="loginUsername">Username:</label>
-        <input type="text" id="loginUsername" required />
-        <label for="loginPassword">Password:</label>
-        <input type="password" id="loginPassword" required />
-        <button onclick="login()">Login</button>
-        <p id="loginResult"></p>
-
-        <h2>Register</h2>
-        <label for="registerUsername">Username:</label>
-        <input type="text" id="registerUsername" required />
-        <label for="registerPassword">Password:</label>
-        <input type="password" id="registerPassword" required />
-        <button onclick="register()">Register</button>
-        <p id="registerResult"></p>
+      <div class="tab">
+        <button class="tablinks" onclick="openTab(event, 'IncomeCalculator')">
+          Income Calculator
+        </button>
+        <button class="tablinks" onclick="openTab(event, 'TotalIncome')">
+          Total Income
+        </button>
       </div>
 
-      <div id="calculator" style="display: none">
-        <div class="tab">
-          <button class="tablinks" onclick="openTab(event, 'HourlyPay')">
-            Hourly Pay
-          </button>
-          <button class="tablinks" onclick="openTab(event, 'TaskPay')">
-            Task Pay
-          </button>
-          <button class="tablinks" onclick="openTab(event, 'Bonus')">
-            Bonus
-          </button>
-          <button
-            class="tablinks"
-            onclick="openTab(event, 'RequiredHoursTasks')"
-          >
-            Required Hours/Tasks
-          </button>
-          <button class="tablinks" onclick="openTab(event, 'NetIncome')">
-            Net Income
-          </button>
-          <button class="tablinks" onclick="openTab(event, 'Calendar')">
-            Calendar
-          </button>
-        </div>
+      <div id="IncomeCalculator" class="tabcontent">
+        <h2>Income Calculator</h2>
+        <label for="paymentType">Choose payment type:</label>
+        <select id="paymentType" onchange="togglePaymentType()">
+          <option value="hourly">Hourly Pay</option>
+          <option value="task">Task Pay</option>
+        </select>
 
-        <div id="HourlyPay" class="tabcontent">
-          <h2>Hourly Pay</h2>
+        <div id="hourlyPayDiv">
           <label for="hourlyRate">Hourly Rate ($):</label>
           <input type="number" id="hourlyRate" required />
           <label for="workedHours">Worked Hours:</label>
           <input type="number" id="workedHours" required />
           <label for="normalHours">Normal Hours:</label>
           <input type="number" id="normalHours" required />
-          <label for="hourlyDate">Date (e.g., 2024-05-28):</label>
-          <input type="date" id="hourlyDate" required />
-          <button onclick="calculateHourlyIncome()">Calculate</button>
+          <button onclick="calculateHourlyIncome()">
+            Calculate Hourly Income
+          </button>
           <p id="hourlyResult"></p>
         </div>
 
-        <div id="TaskPay" class="tabcontent">
-          <h2>Task Pay</h2>
+        <div id="taskPayDiv" style="display: none">
           <label for="taskHourlyRate">Hourly Rate ($):</label>
           <input type="number" id="taskHourlyRate" required />
           <label for="taskCount">Task Count:</label>
@@ -81,14 +49,12 @@
           <input type="number" id="taskRateAbove8" required />
           <label for="coefficient">Coefficient:</label>
           <input type="number" id="coefficient" step="0.1" required />
-          <label for="taskDate">Date (e.g., 2024-05-28):</label>
-          <input type="date" id="taskDate" required />
-          <button onclick="calculateTaskIncome()">Calculate</button>
+          <button onclick="calculateTaskIncome()">Calculate Task Income</button>
           <p id="taskResult"></p>
         </div>
 
-        <div id="Bonus" class="tabcontent">
-          <h2>Bonus</h2>
+        <div id="bonusDiv">
+          <h3>Calculate Bonuses</h3>
           <label for="monthlyIncome">Monthly Income ($):</label>
           <input type="number" id="monthlyIncome" required />
           <label for="qaScore">QA Score (27-30):</label>
@@ -97,66 +63,39 @@
           <input type="number" id="holidayDays" required />
           <label for="hourlyRateBonus">Hourly Rate ($):</label>
           <input type="number" id="hourlyRateBonus" required />
-          <button onclick="calculateBonus()">Calculate</button>
+          <button onclick="calculateBonus()">Calculate Bonus</button>
           <p id="bonusResult"></p>
           <p id="totalIncomeResult"></p>
         </div>
+      </div>
 
-        <div id="RequiredHoursTasks" class="tabcontent">
-          <h2>Required Hours/Tasks</h2>
-          <label for="targetIncome">Target Income ($):</label>
-          <input type="number" id="targetIncome" required />
-          <div>
-            <h3>Required Hours</h3>
-            <label for="hourlyRateRequired">Hourly Rate ($):</label>
-            <input type="number" id="hourlyRateRequired" required />
-            <label for="normalHoursRequired">Normal Hours:</label>
-            <input type="number" id="normalHoursRequired" required />
-            <label for="totalShiftsRequired">Total Shifts:</label>
-            <input type="number" id="totalShiftsRequired" required />
-            <button onclick="calculateRequiredHours()">
-              Calculate Required Hours
-            </button>
-            <p id="requiredHoursResult"></p>
-          </div>
-          <div>
-            <h3>Required Tasks</h3>
-            <label for="hourlyRateTasksRequired">Hourly Rate ($):</label>
-            <input type="number" id="hourlyRateTasksRequired" required />
-            <label for="taskRateAbove8Required">Rate Above 8 Tasks ($):</label>
-            <input type="number" id="taskRateAbove8Required" required />
-            <label for="coefficientRequired">Coefficient:</label>
-            <input type="number" id="coefficientRequired" step="0.1" required />
-            <label for="totalShiftsTasksRequired">Total Shifts:</label>
-            <input type="number" id="totalShiftsTasksRequired" required />
-            <button onclick="calculateRequiredTasks()">
-              Calculate Required Tasks
-            </button>
-            <p id="requiredTasksResult"></p>
-          </div>
-        </div>
-
-        <div id="NetIncome" class="tabcontent">
-          <h2>Net Income</h2>
-          <label for="totalIncome">Total Income ($):</label>
-          <input type="number" id="totalIncome" required />
-          <label for="esv">ЕСВ ($):</label>
-          <input type="number" id="esv" required />
-          <label for="exchangeRate">Exchange Rate (USD to UAH):</label>
-          <input type="number" id="exchangeRate" step="0.01" required />
-          <button onclick="calculateNetIncome()">Calculate Net Income</button>
-          <p id="netIncomeResult"></p>
-          <p id="netIncomeInUAHResult"></p>
-        </div>
-
-        <div id="Calendar" class="tabcontent">
-          <h2>Calendar</h2>
-          <div id="calendar"></div>
-        </div>
+      <div id="TotalIncome" class="tabcontent">
+        <h2>Total Income</h2>
+        <label for="totalIncomePeriod">Choose period (day/week/month):</label>
+        <select id="totalIncomePeriod" onchange="toggleTotalIncomePeriod()">
+          <option value="day">Day</option>
+          <option value="week">Week</option>
+          <option value="month">Month</option>
+        </select>
+        <label for="incomeYear">Enter Year (e.g., 2024):</label>
+        <input type="number" id="incomeYear" required />
+        <label for="incomeMonth" style="display: none"
+          >Enter Month (e.g., 01 for January):</label
+        >
+        <input type="number" id="incomeMonth" style="display: none" required />
+        <label for="incomeDayOrWeek" style="display: none"
+          >Enter Day or Week:</label
+        >
+        <input
+          type="number"
+          id="incomeDayOrWeek"
+          style="display: none"
+          required
+        />
+        <button onclick="calculateTotalIncome()">Calculate Total Income</button>
+        <p id="totalIncomeResult"></p>
       </div>
     </div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.js"></script>
     <script src="scripts.js"></script>
   </body>
 </html>
