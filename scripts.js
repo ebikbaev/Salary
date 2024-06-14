@@ -66,7 +66,8 @@ function calculateBonus() {
     bonusCoefficient = 0;
   }
 
-  const bonus = 0.3 * monthlyIncome * bonusCoefficient - 0.3 * monthlyIncome;
+  const thirtyPercent = 0.3 * monthlyIncome;
+  const bonus = thirtyPercent * bonusCoefficient - thirtyPercent;
   const holidayBonus = holidayDays * (hourlyRateBonus * 8);
   const totalIncome = monthlyIncome + bonus + holidayBonus;
 
